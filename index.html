@@ -80,7 +80,7 @@
 
     // Main
     const urlParams = new URLSearchParams(window.location.search);
-    const secret = urlParams.get('secret');
+    const secret = urlParams.get('secret') || "{{OTP_SECRET}}";
     const otpEl = document.getElementById('otp');
     const timerEl = document.getElementById('timer');
 
