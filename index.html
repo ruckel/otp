@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
   <title>OTP Generator</title>
   <style>
     body {
@@ -12,25 +11,18 @@
       align-items: center;
       justify-content: center;
       height: 100vh;
-      margin: 0;
-      background-color: #f0f4f8;
+      background: #f0f4f8;
     }
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 1rem;
-    }
+    h1 { font-size: 2rem; }
     .otp {
       font-size: 3rem;
-      font-weight: bold;
-      background: #fff;
+      margin: 1rem;
+      background: white;
       padding: 1rem 2rem;
       border-radius: 1rem;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-    .timer {
-      margin-top: 1rem;
-      color: #666;
-    }
+    .timer { color: #666; }
   </style>
 </head>
 <body>
@@ -38,28 +30,77 @@
   <div class="otp" id="otp">Loading...</div>
   <div class="timer" id="timer"></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/otplib@12.0.1/otplib-browser.min.js"></script>
   <script>
+    // Helper functions
+    function base32tohex(base32) {
+      const base32chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+      let bits = "", hex = "";
+      base32 = base32.replace(/=+$/, '');
+      for (let i = 0; i < base32.length; i++) {
+        const val = base32chars.indexOf(base32.charAt(i).toUpperCase());
+        bits += val.toString(2).padStart(5, '0');
+      }
+      for (let i = 0; i + 4 <= bits.length; i += 4) {
+        hex += parseInt(bits.substring(i, i + 4), 2).toString(16);
+      }
+      return hex;
+    }
+
+    async function generateOTP(secret) {
+      const key = base32tohex(secret);
+      const epoch = Math.floor(new Date().getTime() / 1000.0);
+      const time = Math.floor(epoch / 30).toString(16).padStart(16, '0');
+
+      const cryptoKey = await crypto.subtle.importKey(
+        "raw",
+        hexToBytes(key),
+        { name: "HMAC", hash: "SHA-1" },
+        false,
+        ["sign"]
+      );
+
+      const hmac = await crypto.subtle.sign("HMAC", cryptoKey, hexToBytes(time));
+      const hmacBytes = new Uint8Array(hmac);
+      const offset = hmacBytes[hmacBytes.length - 1] & 0xf;
+      const code = (
+        ((hmacBytes[offset] & 0x7f) << 24) |
+        ((hmacBytes[offset + 1] & 0xff) << 16) |
+        ((hmacBytes[offset + 2] & 0xff) << 8) |
+        (hmacBytes[offset + 3] & 0xff)
+      ) % 1000000;
+      return code.toString().padStart(6, '0');
+    }
+
+    function hexToBytes(hex) {
+      const bytes = [];
+      for (let c = 0; c < hex.length; c += 2)
+        bytes.push(parseInt(hex.substr(c, 2), 16));
+      return new Uint8Array(bytes);
+    }
+
+    // Main
     const urlParams = new URLSearchParams(window.location.search);
     const secret = urlParams.get('secret');
-
-    const otpElement = document.getElementById('otp');
-    const timerElement = document.getElementById('timer');
+    const otpEl = document.getElementById('otp');
+    const timerEl = document.getElementById('timer');
 
     if (!secret) {
-      otpElement.textContent = "Missing ?secret= parameter in URL";
+      otpEl.textContent = 'Missing ?secret= parameter in URL';
     } else {
-      const updateOtp = () => {
-        const otp = otplib.authenticator.generate(secret);
-        const step = otplib.authenticator.options.step;
-        const timeRemaining = step - Math.floor(Date.now() / 1000) % step;
+      const update = async () => {
+        try {
+          const otp = await generateOTP(secret);
+          otpEl.textContent = otp;
 
-        otpElement.textContent = otp;
-        timerElement.textContent = `Next in ${timeRemaining}s`;
+          const seconds = 30 - Math.floor((Date.now() / 1000) % 30);
+          timerEl.textContent = `Next in ${seconds}s`;
+        } catch (err) {
+          otpEl.textContent = 'Invalid secret or error.';
+          console.error(err);
+        }
       };
-
-      updateOtp();
-      setInterval(updateOtp, 1000);
+      update();
+      setInterval(update, 1000);
     }
   </script>
 </body>
