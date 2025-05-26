@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>OTP Generator</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f0f4f8;
+    }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+    .otp {
+      font-size: 3rem;
+      font-weight: bold;
+      background: #fff;
+      padding: 1rem 2rem;
+      border-radius: 1rem;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .timer {
+      margin-top: 1rem;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <h1>Current OTP</h1>
+  <div class="otp" id="otp">Loading...</div>
+  <div class="timer" id="timer"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/otplib@12.0.1/otplib-browser.min.js"></script>
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const secret = urlParams.get('secret');
+
+    const otpElement = document.getElementById('otp');
+    const timerElement = document.getElementById('timer');
+
+    if (!secret) {
+      otpElement.textContent = "Missing ?secret= parameter in URL";
+    } else {
+      const updateOtp = () => {
+        const otp = otplib.authenticator.generate(secret);
+        const step = otplib.authenticator.options.step;
+        const timeRemaining = step - Math.floor(Date.now() / 1000) % step;
+
+        otpElement.textContent = otp;
+        timerElement.textContent = `Next in ${timeRemaining}s`;
+      };
+
+      updateOtp();
+      setInterval(updateOtp, 1000);
+    }
+  </script>
+</body>
+</html>
