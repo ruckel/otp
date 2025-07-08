@@ -88,9 +88,9 @@
     const timerEl = document.getElementById('timer');
     const secretEl = document.getElementById('secret');
 
-    if (!secret) {
-      otpEl.textContent = 'Missing ?secret= parameter in URL';
-      secretEl.textContent = 'No secret'
+    if (!secret || secret === 'J6LLSQOOI6SIQIU22UPYRFQN7PBHIKKTKAQZNCKG2GVTI242B2IUJNU5PHONBQM6') {
+      otpEl.textContent = 'No secret';
+      secretEl.textContent = 'Missing ?secret= parameter in URL'
     } else {
       const update = async () => {
         try {
