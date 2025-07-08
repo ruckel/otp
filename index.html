@@ -83,14 +83,16 @@
 
     // Main
     const urlParams = new URLSearchParams(window.location.search);
-    const secret = urlParams.get('secret') || "J6LLSQOOI6SIQIU22UPYRFQN7PBHIKKTKAQZNCKG2GVTI242B2IUJNU5PHONBQM6";
+    const stringToReplace = "J6LLSQOOI6SIQIU22UPYRFQN7PBHIKKTKAQZNCKG2GVTI242B2IUJNU5PHONBQM6"
+    const stringToReplaceAsB64 = 'e3tPVFBfU0VDUkVUfX0='
+    const secret = urlParams.get('secret') || stringToReplace;
     const otpEl = document.getElementById('otp');
     const timerEl = document.getElementById('timer');
     const secretEl = document.getElementById('secret');
 
-    if (!secret || secret === 'J6LLSQOOI6SIQIU22UPYRFQN7PBHIKKTKAQZNCKG2GVTI242B2IUJNU5PHONBQM6') {
+    if (!secret || btoa(secret) === stringToReplaceAsB64) {
       otpEl.textContent = 'No secret';
-      secretEl.textContent = 'Missing ?secret= parameter in URL'
+      secretEl.textContent = 'Missing secret parameter in URL'
     } else {
       const update = async () => {
         try {
